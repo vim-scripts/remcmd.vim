@@ -1,0 +1,17 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=180
+
+This script came out of my misc utility functions to send some useful commands to a remote Vim session. It basically adds four commands as follows (assuming that your <Leader> is set to \):
+
+    \ro - Opens the current file in a remote Vim session.
+    \re - Executes a command in the remote Vim session.
+    \ta - Opens the current tag in the remote Vim session.
+    \ts - Selects the current tag in the remote Vim session.
+
+Each one of the above commands prompts the user to select the name of a remote Vim and executes the command. To make your life easier, it even remembers your previous selection, so repeated execution of remote commands in the same remote Vim session is easy.
+
+Though it adds only 4, it is because I don't know what commans other might like to add. But it is easy enough for you to add your favourite commands this way. It exposes the basic functions necessary to do it yourself from your own script or .vimrc:
+
+       RemCmdServerList(), RemCmdSelectServer(), RemCmdSendRemoteCommand()
+
+Take a look at the script on how to use these functions. For convenience, you can add regular and/or popup menu group for this with the name "Remcmd" by setting some global variables in your .vimrc. Take a look at the script header for details.
+
