@@ -1,13 +1,13 @@
 "
 " remcmd.vim -- lets you execute commands remotely at another vim instance.
 " Author: Hari Krishna <hari_vim@yahoo.com>
-" Last Change: 11-Jan-2002 @ 20:04
+" Last Change: 31-Jan-2002 @ 14:35
 " Created: 17-Nov-2001 @ 15:15
-" Requires: Vim-6.0, multvals.vim(2.0.4)
-" Version: 1.0.1
+" Requires: Vim-6.0, multvals.vim(2.0.5)
+" Version: 1.0.3
 " Environment:
 "   Adds
-"       RemCmdInitialize
+"       RCmdInitialize, RCmdPresetServer
 "     command.
 "   Adds
 "       <Leader>ta, <Leader>ts, <Leader>ro, <Leader>re
@@ -28,6 +28,8 @@
 "   <Leader>re - Executes a command in the remote Vim session.
 "   <Leader>ta - Opens the current tag in the remote Vim session.
 "   <Leader>ts - Selects the current tag in the remote Vim session.
+"   <Leader>sf - Search forward for the current word in the remote Vim session.
+"   <Leader>sb - Search backward for the current word in the remote Vim session.
 "
 
 if exists("loaded_remcmd")
@@ -37,7 +39,11 @@ let loaded_remcmd=1
 
 " Call this any time to reconfigure the environment. This re-performs the same
 "   initializations that the script does during the vim startup.
-command! -nargs=0 RemCmdInitialize :call <SID>Initialize()
+command! -nargs=0 RCmdInitialize :call <SID>Initialize()
+
+" Pass a servername as preset to be used, instead of prompting user everytime.
+" To clear the preset, just pass an empty string.
+command! -nargs=1 RCmdPresetServer :call RemCmdPresetServer(<f-args>)
 
 
 function! s:Initialize()
@@ -46,6 +52,8 @@ function! s:Initialize()
     exec 'amenu ' . a:sub . '&Remcmd.&SelectTag :call <SID>RemoteTagSelect()<CR>'
     exec 'amenu ' . a:sub . '&Remcmd.&JumpToTag :call <SID>RemoteTagOpen()<CR>'
     exec 'amenu ' . a:sub . '&Remcmd.&EnterRemoteCommand :call <SID>ExecRemoteCommand()<CR>'
+    exec 'amenu ' . a:sub . '&Remcmd.&SearchForward :call <SID>RemoteSearchForward()<CR>'
+    exec 'amenu ' . a:sub . '&Remcmd.&SearchBackward :call <SID>RemoteSearchBackward()<CR>'
   endfunction
   
   "
@@ -74,6 +82,8 @@ function! s:Initialize()
     nnoremap <silent> <Leader>re :call <SID>ExecRemoteCommand()<cr>
     nnoremap <silent> <Leader>ta :call <SID>RemoteTagOpen()<cr>
     nnoremap <silent> <Leader>ts :call <SID>RemoteTagSelect()<cr>
+    nnoremap <silent> <Leader>sf :call <SID>RemoteSearchForward()<CR>
+    nnoremap <silent> <Leader>sb :call <SID>RemoteSearchBackward()<CR>
   endif
   
   " Initialize script variables.
@@ -104,10 +114,10 @@ endfunction
 "   cmd - the arbitrary command that should be passed to the remote Vim.
 "
 function! RemCmdSendRemoteCommand(cmd)
-  if cmd != ""
+  if a:cmd != ""
     let serverName = RemCmdSelectServer()
     if serverName != ""
-      call s:RemoteSendCommand(serverName, cmd)
+      call s:RemoteSendCommand(serverName, a:cmd)
     endif
   endif
 endfunction
@@ -119,6 +129,10 @@ endfunction
 "   the selected server name.
 "
 function! RemCmdSelectServer()
+  if exists("s:presetServer") && s:presetServer != ""
+    return s:presetServer
+  endif
+
   let l:list = RemCmdServerList()
 
   let serverName = MvPromptForElement(l:list, ',', s:selectedServerName,
@@ -129,11 +143,21 @@ function! RemCmdSelectServer()
   return serverName
 endfunction
 
+
+function! RemCmdPresetServer(serverName)
+  let s:presetServer = a:serverName
+  if s:presetServer == ""
+    unlet s:presetServer
+  endif
+endfunction
+
+
 function! s:RemoteSendCommand(serverName, cmd)
   if a:serverName != ""
     call remote_send(a:serverName, a:cmd)
   endif
 endfunction
+
 
 function! s:ExecRemoteTagCmd(tagcmd)
   let serverName = RemCmdSelectServer()
@@ -165,4 +189,12 @@ function! s:ExecRemoteCommand()
   endif
 
   call RemCmdSendRemoteCommand(cmd)
+endfunction
+
+function! s:RemoteSearchForward()
+  call RemCmdSendRemoteCommand("/" . expand("<cword>") . "\<CR>")
+endfunction
+
+function! s:RemoteSearchBackward()
+  call RemCmdSendRemoteCommand("?" . expand("<cword>") . "\<CR>")
 endfunction
